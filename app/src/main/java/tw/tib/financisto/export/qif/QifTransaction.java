@@ -97,7 +97,14 @@ public class QifTransaction {
         if (split.toAccount != null) {
             qifWriter.write("S[").write(split.toAccount).write("]").newLine();
         } else {
+            // <Versão JR - 20260120>
+            /*
             if (split.category != null) {
+            */
+            if (split.category != null && split.project != null) {
+                qifWriter.write("S").write(split.category).write("/").write(split.project).newLine();
+            } else if (split.category != null) {
+                // </Versão JR - 20260120>
                 qifWriter.write("S").write(split.category).newLine();
             } else {
                 qifWriter.write("S<NO_CATEGORY>").newLine();

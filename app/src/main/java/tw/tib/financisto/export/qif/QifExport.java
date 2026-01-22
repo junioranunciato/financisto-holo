@@ -14,6 +14,8 @@ import android.content.Context;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
 
+import java.util.Map;
+
 import tw.tib.financisto.blotter.BlotterFilter;
 import tw.tib.financisto.filter.Criteria;
 import tw.tib.financisto.filter.WhereFilter;
@@ -23,6 +25,9 @@ import tw.tib.financisto.model.Account;
 import tw.tib.financisto.model.Category;
 import tw.tib.financisto.model.CategoryTree;
 import tw.tib.financisto.model.Transaction;
+// <Versão JR - 20260120>
+import tw.tib.financisto.model.Project;
+// </Versão JR - 20260120>
 
 import java.io.BufferedWriter;
 import java.io.IOException;
@@ -37,6 +42,9 @@ public class QifExport extends Export {
     private final CategoryTree<Category> categories;
     private final Map<Long, Category> categoriesMap;
     private final Map<Long, Account> accountsMap;
+    // <Versão JR - 20260120>
+    private final Map<Long, Project> projectsMap;
+    // </Versão JR - 20260120>
 
     public QifExport(Context context, DatabaseAdapter db, QifExportOptions options) {
         super(context, false);
@@ -45,6 +53,9 @@ public class QifExport extends Export {
         this.categories = db.getCategoriesTree(false);
         this.categoriesMap = categories.asMap();
         this.accountsMap = db.getAllAccountsMap();
+        // <Versão JR - 20260120>
+        this.projectsMap = db.getAllProjectsByIdMap(false);
+        // </Versão JR - 20260120>
     }
 
     @Override
@@ -133,11 +144,28 @@ public class QifExport extends Export {
         List<QifTransaction> qifTransactions = new ArrayList<QifTransaction>(transactions.size());
         for (Transaction transaction : transactions) {
             QifTransaction qifTransaction = QifTransaction.fromTransaction(transaction, categoriesMap, accountsMap);
+            // <Versão JR - 20260120>
+            qifTransaction = this.setSplitTransactionProject_Jr(transaction, qifTransaction);
+            // </Versão JR - 20260120>
             qifTransactions.add(qifTransaction);
         }
         return qifTransactions;
     }
 
+    // <Versão JR - 20260120>
+    private QifTransaction setSplitTransactionProject_Jr(Transaction _transaction, QifTransaction _splitQifTransaction)
+    {
+        if (_transaction.projectId > 0)
+        {
+            Project project = projectsMap.get(_transaction.projectId);
+
+            if (project != null)
+            {
+                _splitQifTransaction.project = project.title;
+            }
+        }
+        return _splitQifTransaction;
+    }
     private Cursor getBlotterForAccount(Account account) {
         WhereFilter accountFilter = WhereFilter.copyOf(options.filter);
         accountFilter.put(Criteria.eq(BlotterFilter.FROM_ACCOUNT_ID, String.valueOf(account.id)));

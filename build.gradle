@@ -15,3 +15,7 @@ allprojects {
         google()
     }
 }
+
+task forceClean(type: Delete) {
+    delete rootProject.buildDir
+}
